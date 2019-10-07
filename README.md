@@ -16,6 +16,7 @@ This test repo is created to figure out if it's possible to have the following s
 - IP whitelist authorizing
 - Fallback to Basic Auth if IP doesn't match to whitelist
   - Basic Auth should be configured to root url
+- https://github.com/serverless/serverless/issues/6795
 
 ### How to fallback to Basic Auth if IP whitelist doesn't match?
 
