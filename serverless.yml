@@ -1,0 +1,97 @@
+service: nextjs-serveless-test
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: dev
+  region: eu-north-1
+  # resourcePolicy: ${self:custom.resourcePolicies.dev}
+
+custom:
+  serverless-nextjs:
+    nextConfigDir: "./"
+    customHandler: ./handler.js
+    assetsBucketName: nextjs-serveless-test-bucket
+  frontendUrl: "*" # this should be Application URL
+  corsOrigins: ${self:custom.frontendUrl}
+  ipWhiteList:
+    - x.x.x
+  resourcePolicies:
+    dev:
+      - Effect: Allow
+        Principal: "*"
+        Action: execute-api:Invoke
+        Resource:
+          - execute-api:/*/*/*
+        Condition:
+          IpAddress:
+            aws:SourceIp: ${self:custom.ipWhiteList}
+
+package:
+  # exclude everything
+  # page handlers are automatically included by the plugin
+  exclude:
+    - ./**
+  include:
+    - authorizer.js
+
+functions:
+  authorizeUser:
+    handler: authorizer.user
+
+# Resources don't work in offline mode very well.
+# https://github.com/dherault/serverless-offline/issues/623
+resources:
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'${self:custom.corsOrigins}'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: "ApiGatewayRestApi"
+    GatewayResponse:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'${self:custom.corsOrigins}'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+          gatewayresponse.header.WWW-Authenticate: '''Basic realm="Private"'''
+        ResponseType: UNAUTHORIZED
+        RestApiId:
+          Ref: "ApiGatewayRestApi"
+        StatusCode: "401"
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-authorizer.html
+    Authorizer:
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Type: TOKEN
+        RestApiId:
+          Ref: "ApiGatewayRestApi"
+        AuthorizerUri: "arn:aws:apigateway:${self:provider.region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:service}-${self:provider.stage}-authorizeUser/invocations"
+        Name: "Authorizer"
+        IdentitySource: method.request.header.Authorization
+        IdentityValidationExpression: Basic (.*)
+
+    # ExplicitApi:
+    #   Type: AWS::Serverless::Api
+    #   Properties:
+    #     StageName: dev
+    #     Cors: true
+    #     Auth:
+    #       DefaultAuthorizer: basicAuth
+    #       Authorizers:
+    #         basicAuth:
+    #           FunctionPayloadType: TOKEN
+    #           FunctionArn:
+    #             - Ref: Authorizer
+    #           Identity:
+    #             Headers:
+    #               - Authorization
+
+plugins:
+  - serverless-nextjs-plugin
+  - serverless-offline
+  - serverless-pseudo-parameters
