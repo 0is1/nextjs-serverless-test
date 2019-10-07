@@ -1,4 +1,4 @@
-service: nextjs-serveless-test
+service: nextjs-serverless-test
 
 provider:
   name: aws
