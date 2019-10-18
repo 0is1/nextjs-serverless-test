@@ -5,7 +5,7 @@ provider:
   runtime: nodejs10.x
   stage: dev
   region: eu-north-1
-  # resourcePolicy: ${self:custom.resourcePolicies.dev}
+  # resourcePolicy: ${self:custom.resourcePolicies.dev} # uncomment to enable ipWhiteList check
 
 custom:
   serverless-nextjs:
@@ -14,8 +14,14 @@ custom:
     assetsBucketName: nextjs-serveless-test-bucket
   frontendUrl: "*" # this should be Application URL
   corsOrigins: ${self:custom.frontendUrl}
+  authorizer:
+    users:
+      name: authorizeUser
+      type: TOKEN
+      identitySource: method.request.header.Authorization
+      identityValidationExpression: Basic (.*)
   ipWhiteList:
-    - x.x.x
+    - x.x.x # TODO: list of allowed ips
   resourcePolicies:
     dev:
       - Effect: Allow
@@ -36,6 +42,13 @@ package:
     - authorizer.js
 
 functions:
+  # handler:
+  #   handler: handler
+  #   events:
+  #     - http:
+  #         path: /
+  #         method: GET
+  #         authorizer: ${self:custom.authorizer.users} # this is doing nothing if serverless-nextjs-plugin is on
   authorizeUser:
     handler: authorizer.user
 
