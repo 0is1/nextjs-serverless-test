@@ -24,7 +24,20 @@ This test repo is created to figure out if it's possible to have the following s
 
 ### How to add Basic Auth to root url?
 
-- Best guess this far is to add `AWS::Serverless::Api` configuration with `Auth`. But this AWSCloudFormation config causes the following error:
+It seems that this is not working if `serverless-nextjs-plugin` is used
+
+```
+functions:
+   handler:
+     handler: handler
+     events:
+       - http:
+           path: /
+           method: GET
+           authorizer: ${self:custom.authorizer.users}
+```
+
+- So best guess this far is to add `AWS::Serverless::Api` configuration with `Auth`. But this AWSCloudFormation config causes the following error:
 
 > Error: The CloudFormation template is invalid: Template format error: Unrecognized resource types: [AWS::Serverless::Api]
 
