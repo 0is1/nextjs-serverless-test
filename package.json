@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "basic-auth": "^2.0.1",
-    "next": "^8.1.0",
+    "next": "^9.3.2",
     "next-aws-lambda": "^2.3.4",
     "react": "16.10.2",
     "react-dom": "16.10.2"
